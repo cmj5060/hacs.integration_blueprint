@@ -766,7 +766,6 @@ replace_in_files() {
 
     # Exclude files that will be deleted/replaced (avoid unnecessary work)
     find_args+=(-not -path "./README.template.md")  # Will be deleted after replacing README.md
-    find_args+=(-not -path "./USING_README_TEMPLATE.md")  # Will be deleted
     find_args+=(-not -path "./.devcontainer/post-attach.sh")  # Will be deleted
 
     # Exclude runtime/config data that shouldn't be modified
@@ -853,7 +852,6 @@ replace_readme_with_template() {
 
     if $DRY_RUN; then
         print_dryrun "Would replace README.md with README.template.md"
-        print_dryrun "Would remove README.template.md and USING_README_TEMPLATE.md"
     else
         print_color "$BLUE" "Replacing README.md with customized template..."
 
@@ -865,11 +863,6 @@ replace_readme_with_template() {
         if [[ -f "README.template.md" ]]; then
             rm -f README.template.md
             print_success "Removed README.template.md"
-        fi
-
-        if [[ -f "USING_README_TEMPLATE.md" ]]; then
-            rm -f USING_README_TEMPLATE.md
-            print_success "Removed USING_README_TEMPLATE.md"
         fi
     fi
 }
