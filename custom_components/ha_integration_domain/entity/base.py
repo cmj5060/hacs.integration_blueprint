@@ -13,11 +13,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from custom_components.ha_integration_domain.const import ATTRIBUTION
+from custom_components.ha_integration_domain.coordinator import IntegrationBlueprintDataUpdateCoordinator
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-from .const import ATTRIBUTION
-from .coordinator import IntegrationBlueprintDataUpdateCoordinator
 
 if TYPE_CHECKING:
     from homeassistant.helpers.entity import EntityDescription
