@@ -84,6 +84,7 @@ If a developer requests something that contradicts these instructions:
 **Rules:**
 
 - ❌ **NEVER** create random markdown files in code directories
+- ❌ **NEVER** create documentation in `.github/` unless it's a GitHub-specified file
 - ✅ **ALWAYS ask first** before creating permanent documentation
 - ✅ **Prefer module docstrings** over separate markdown files
 

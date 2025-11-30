@@ -149,19 +149,18 @@ pkill -f "hass --config" || true && pkill -f "debugpy.*5678" || true && ./script
 
 **Three types of content with clear separation:**
 
-1. **Developer docs:** Use `docs/development/` (architecture, decisions, internal design)
-2. **User docs:** Use `docs/user/` (installation, configuration, examples for end-users)
-3. **Temporary planning:** Use `.ai-scratch/` (never committed, AI-only scratch files)
+1. **Developer docs:** Use `docs/development/` (architecture, decisions, internal design) - **ASK FIRST**
+2. **User docs:** Use `docs/user/` (installation, configuration, examples for end-users) - **ASK FIRST**
+3. **Temporary planning:** Use `.ai-scratch/` (never committed, AI-only scratch files) - OK without asking
 
 **Rules for creating documentation:**
 
-- ❌ **NEVER** create random markdown files (README.md, GUIDE.md, etc.) in code directories
-- ❌ **NEVER** create markdown files outside `docs/` or `.ai-scratch/` without explicit permission
-- ❌ **NEVER** create "helpful" READMEs in package directories - use module docstrings instead
-- ✅ **ALWAYS ask first** before creating permanent documentation
+- ❌ **NEVER** create markdown files without explicit permission
+- ❌ **NEVER** create "helpful" READMEs, GUIDE.md, NOTES.md, etc.
+- ❌ **NEVER** create documentation in `.github/` unless it's a GitHub-specified file
+- ✅ **ALWAYS ask first** "Should I create documentation for this?"
 - ✅ **Prefer module/class/function docstrings** over separate markdown files
 - ✅ **Prefer extending** existing docs over creating new files
-- ✅ **Suggest documentation** for complex features or significant decisions (but ask first!)
 - ✅ **Use `.ai-scratch/`** for all temporary planning and notes
 
 **Session management:**
