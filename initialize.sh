@@ -831,7 +831,7 @@ replace_in_files() {
         # Note: config/configuration.yaml is negated in gitignore, will be added back later
         # Note: custom_components/ha_integration_domain/ is negated, will be added back later
     )
-    
+
     # Additional file exclusions in config/ directory (runtime files, logs, databases)
     local config_exclude_patterns=(
         "*.db"             # Database files
@@ -895,7 +895,7 @@ replace_in_files() {
                 break
             fi
         done
-        
+
         # Skip config/ runtime files (logs, databases, etc.)
         if [[ "$file" == ./config/* ]] && ! $skip; then
             for pattern in "${config_exclude_patterns[@]}"; do
@@ -1414,8 +1414,12 @@ main() {
     # Replace namespace (class prefix)
     replace_in_files "IntegrationBlueprint" "$namespace" "class namespace prefix"
 
-    # Replace GitHub repository
+    # Replace GitHub repository (both full path and repository name only)
     replace_in_files "jpawlowski/hacs.integration_blueprint" "$github_repo" "GitHub repository"
+
+    # Extract repository name (without owner) for HACS redirect URLs
+    local github_repo_name="${github_repo#*/}"
+    replace_in_files "hacs.integration_blueprint" "$github_repo_name" "GitHub repository name"
 
     # Replace author name first (separate from GitHub username)
     replace_in_files "Julian Pawlowski" "$author_name" "author name"
