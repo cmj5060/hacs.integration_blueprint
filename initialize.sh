@@ -770,6 +770,12 @@ parse_gitignore_to_prune_paths() {
             continue
         fi
 
+        # Skip wildcard patterns like "config/*" or "*.pyc" - they don't work well with find -prune
+        # These will be handled by negation patterns instead
+        if [[ "$line" =~ \* ]]; then
+            continue
+        fi
+
         # Convert gitignore patterns to find paths
         # Directory patterns (ending with /)
         if [[ "$line" =~ /$ ]]; then
@@ -779,12 +785,12 @@ parse_gitignore_to_prune_paths() {
             # Add as both root-level and nested pattern
             prune_paths+=("./$dir_pattern")
             prune_paths+=("*/$dir_pattern")
-        # Wildcard directory patterns (e.g., __pycache__)
-        elif [[ ! "$line" =~ \. ]] && [[ ! "$line" =~ / ]] && [[ ! "$line" =~ \* ]]; then
-            # Simple directory name without extension or path
+        # Simple directory name without extension, path, or wildcards
+        elif [[ ! "$line" =~ \. ]] && [[ ! "$line" =~ / ]]; then
+            # Simple directory name without extension or path (e.g., __pycache__, build, dist)
             prune_paths+=("./$line")
             prune_paths+=("*/$line")
-        # Patterns with wildcards or specific paths
+        # Patterns with paths but no wildcards
         elif [[ "$line" =~ / ]]; then
             prune_paths+=("./$line")
         fi
@@ -798,7 +804,6 @@ parse_gitignore_to_prune_paths() {
     echo "NEGATE:"
     printf '%s\n' "${negations[@]}"
 }
-
 # Replace text in files
 replace_in_files() {
     local search=$1
@@ -812,6 +817,32 @@ replace_in_files() {
     # These are not just about gitignore, but about performance and safety
     local critical_prune=(
         "./.git"           # Git internal database (CRITICAL: can have thousands of objects)
+    )
+
+    # Additional hardcoded prune paths for directories that gitignore wildcards would catch
+    # but we want to prune at the directory level for performance
+    # These correspond to patterns like "config/*" and "custom_components/*" in gitignore
+    local hardcoded_prune=(
+        "./config/.storage"              # HA storage (from config/*)
+        "./config/deps"                  # HA dependencies
+        "./config/tts"                   # HA text-to-speech
+        "./config/blueprints"            # HA blueprints
+        "./config/custom_components/hacs" # HACS installation (not our integration)
+        # Note: config/configuration.yaml is negated in gitignore, will be added back later
+        # Note: custom_components/ha_integration_domain/ is negated, will be added back later
+    )
+    
+    # Additional file exclusions in config/ directory (runtime files, logs, databases)
+    local config_exclude_patterns=(
+        "*.db"             # Database files
+        "*.db-journal"     # Database journal files
+        "*.db-shm"         # Database shared memory
+        "*.db-wal"         # Database write-ahead log
+        "*.log"            # Log files
+        "*.log.*"          # Rotated log files
+        ".HA_VERSION"      # HA version file
+        ".ha_run.lock"     # HA runtime lock
+        "*.pid"            # PID files
     )
 
     # Read prune paths and negations from .gitignore
@@ -833,8 +864,8 @@ replace_in_files() {
         fi
     done < <(parse_gitignore_to_prune_paths)
 
-    # Combine critical and gitignore prune paths
-    local all_prune_paths=("${critical_prune[@]}" "${gitignore_prune[@]}")
+    # Combine critical, hardcoded, and gitignore prune paths
+    local all_prune_paths=("${critical_prune[@]}" "${hardcoded_prune[@]}" "${gitignore_prune[@]}")
 
     # Build prune arguments: -path "./.git" -o -path "./.local" -o ...
     local prune_args=()
@@ -864,6 +895,16 @@ replace_in_files() {
                 break
             fi
         done
+        
+        # Skip config/ runtime files (logs, databases, etc.)
+        if [[ "$file" == ./config/* ]] && ! $skip; then
+            for pattern in "${config_exclude_patterns[@]}"; do
+                if [[ "$filename" == $pattern ]]; then
+                    skip=true
+                    break
+                fi
+            done
+        fi
 
         if ! $skip; then
             files_found+=("$file")
