@@ -29,7 +29,7 @@ from .api import IntegrationBlueprintApiClient
 from .const import DOMAIN, LOGGER
 from .coordinator import IntegrationBlueprintDataUpdateCoordinator
 from .data import IntegrationBlueprintData
-from .services import async_register_services, async_unregister_services
+from .services import async_setup_services
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -37,14 +37,40 @@ if TYPE_CHECKING:
     from .data import IntegrationBlueprintConfigEntry
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
     Platform.BINARY_SENSOR,
-    Platform.SWITCH,
-    Platform.SELECT,
-    Platform.NUMBER,
     Platform.BUTTON,
     Platform.FAN,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
 ]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """
+    Set up the integration.
+
+    This is called once at Home Assistant startup to register services.
+    Services must be registered here (not in async_setup_entry) to ensure:
+    - Service validation works correctly
+    - Services are available even without config entries
+    - Helpful error messages are provided
+
+    This is a Silver Quality Scale requirement.
+
+    Args:
+        hass: The Home Assistant instance.
+        config: The Home Assistant configuration.
+
+    Returns:
+        True if setup was successful.
+
+    For more information:
+    https://developers.home-assistant.io/docs/dev_101_services
+    """
+    await async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(
@@ -82,18 +108,26 @@ async def async_setup_entry(
     For more information:
     https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
     """
+    # Initialize client first
+    client = IntegrationBlueprintApiClient(
+        username=entry.data[CONF_USERNAME],  # From config flow setup
+        password=entry.data[CONF_PASSWORD],  # From config flow setup
+        session=async_get_clientsession(hass),
+    )
+
+    # Initialize coordinator with config_entry
     coordinator = IntegrationBlueprintDataUpdateCoordinator(
         hass=hass,
         logger=LOGGER,
         name=DOMAIN,
+        config_entry=entry,
         update_interval=timedelta(hours=1),
+        always_update=False,  # Only update entities when data actually changes
     )
+
+    # Store runtime data
     entry.runtime_data = IntegrationBlueprintData(
-        client=IntegrationBlueprintApiClient(
-            username=entry.data[CONF_USERNAME],  # From config flow setup
-            password=entry.data[CONF_PASSWORD],  # From config flow setup
-            session=async_get_clientsession(hass),
-        ),
+        client=client,
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
     )
@@ -103,9 +137,6 @@ async def async_setup_entry(
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
-
-    # Register services
-    await async_register_services(hass, entry)
 
     return True
 
@@ -133,9 +164,6 @@ async def async_unload_entry(
     For more information:
     https://developers.home-assistant.io/docs/config_entries_index/#unloading-entries
     """
-    # Unregister services
-    await async_unregister_services(hass, entry)
-
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
