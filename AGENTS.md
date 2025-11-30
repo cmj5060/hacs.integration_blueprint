@@ -170,15 +170,24 @@ This integration uses the following identifiers consistently:
 
 ### Integration Structure
 
-**Package organization:**
+**Package organization (DO NOT create other packages):**
 
 - `api/` - API client and exceptions
 - `coordinator/` - Data update coordinator
-- `config_flow_handler/` - Config flow, options, validators
+- `config_flow_handler/` - Config flow, options, validators, schemas
+  - `validators/*.py` - Config flow validation functions
+  - `schemas/*.py` - Data schemas for config flow steps
 - `entity/` - Base entity classes
+- `entity_utils/` - Entity-specific helpers (device_info, state formatting)
 - `[platform]/` - Entity platforms (sensor, switch, etc.)
 - `services/` - Service implementations
-- `utils/` - Shared utilities
+- `utils/` - Integration-wide utilities (string helpers, general validators)
+
+**Do NOT create:**
+
+- `helpers/`, `ha_helpers/`, or similar packages - use `utils/` or `entity_utils/` instead
+- `common/`, `shared/`, `lib/` - use existing packages above
+- New top-level packages without explicit approval
 
 **Key patterns:**
 

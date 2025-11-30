@@ -38,13 +38,24 @@ Generate code that passes these checks on first run.
 
 **Data Flow:** Entities → Coordinator → API Client (never skip layers)
 
-**Package Structure:**
+**Package Structure (DO NOT create other packages):**
 
 - `coordinator/` - DataUpdateCoordinator (base.py + data_processing.py + error_handling.py + listeners.py)
 - `api/` - External API client with async aiohttp
 - `entity/` - Base entity class (`IntegrationBlueprintEntity`)
+- `entity_utils/` - Entity-specific helpers (device_info, state formatting)
 - `config_flow_handler/` - Config flow with schemas/ and validators/ subdirs
+  - `validators/*.py` - Config flow validation functions
+  - `schemas/*.py` - Data schemas for config flow steps
 - `[platform]/` - One directory per platform (sensor, switch, etc.), one class per file
+- `services/` - Service implementations
+- `utils/` - Integration-wide utilities (string helpers, general validators)
+
+**Do NOT create:**
+
+- `helpers/`, `ha_helpers/`, or similar packages - use `utils/` or `entity_utils/` instead
+- `common/`, `shared/`, `lib/` - use existing packages above
+- New top-level packages without explicit approval
 
 **Key Patterns:**
 
