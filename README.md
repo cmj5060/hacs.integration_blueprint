@@ -36,7 +36,15 @@ Both options use the same DevContainer setup, so your code and workflow are iden
 2. Choose a name for your integration repository (e.g., `hass-my-awesome-device`)
 3. Click **"Create repository"**
 
-Now you have your own copy to work with! Continue with Option 1 or Option 2 below.
+**🤖 Optional: Initialize with Copilot Coding Agent**
+
+After clicking "Create repository", GitHub may offer an optional prompt field for **Copilot Coding Agent**. You can use this to automatically initialize your integration:
+
+- Provide your integration details (domain, title, repository)
+- The agent will run the initialization script and create a pull request
+- See [`.github/COPILOT_CODING_AGENT.md`](.github/COPILOT_CODING_AGENT.md) for example prompts
+
+**Manual initialization?** Continue with Option 1 or Option 2 below.
 
 ### Option 1: GitHub Codespaces (Recommended for Beginners) ☁️
 
@@ -244,16 +252,26 @@ custom_components/ha_integration_domain/  # Your integration code
 ├── __init__.py                # Integration setup and entry point
 ├── config_flow.py             # Config flow entry point (delegates to handler)
 ├── const.py                   # Constants and configuration
-├── coordinator.py             # DataUpdateCoordinator for efficient data fetching
 ├── data.py                    # Data models and type definitions
 ├── diagnostics.py             # Diagnostics data for troubleshooting
-├── entity.py                  # Base entity class for all entities
 ├── manifest.json              # Integration metadata
+├── repairs.py                 # Repair flows for fixing issues
 ├── services.yaml              # Service definitions
 │
 ├── api/                       # API client package
 │   ├── __init__.py
 │   └── client.py              # API client implementation
+│
+├── coordinator/               # DataUpdateCoordinator package
+│   ├── __init__.py            # Main coordinator export
+│   ├── base.py                # Core coordinator implementation
+│   ├── data_processing.py     # Data transformation
+│   ├── error_handling.py      # Error recovery
+│   └── listeners.py           # Entity callbacks
+│
+├── entity/                    # Base entity package
+│   ├── __init__.py            # Base entity export
+│   └── base.py                # IntegrationBlueprintEntity class
 │
 ├── config_flow_handler/       # Config flow package
 │   ├── __init__.py
@@ -393,7 +411,7 @@ The config flow is organized in the [`config_flow_handler/`](custom_components/h
 
 ### DataUpdateCoordinator
 
-The [`coordinator.py`](custom_components/ha_integration_domain/coordinator.py) file efficiently manages data fetching:
+The [`coordinator/`](custom_components/ha_integration_domain/coordinator/) package efficiently manages data fetching:
 
 - **Single API call**: Instead of each entity polling separately, the coordinator fetches data once
 - **Shared data**: All entities receive the same data, reducing API load
@@ -521,43 +539,36 @@ Just wait for the setup to complete (check the terminal), then run `script/devel
 
 ### AI agent support
 
-This blueprint is optimized for development with AI coding assistants like **GitHub Copilot**, **Claude**, and other AI agents:
+This blueprint is optimized for development with AI coding assistants like **GitHub Copilot**, **Claude**, and other AI agents.
 
-**Comprehensive instructions:**
+**Quick start for AI assistants:**
 
-- **`AGENTS.md`** - Primary instruction file for all AI agents (project overview, code patterns, workflows)
-- **`.github/instructions/*.instructions.md`** - Path-specific instructions for different file types:
-  - `python.instructions.md` - Python code style and patterns
-  - `yaml.instructions.md` - YAML file conventions
-  - `json.instructions.md` - JSON file formatting
-  - `manifest.instructions.md` - Integration manifest requirements
-  - `services.instructions.md` - Service definition patterns
-  - `translations.instructions.md` - Translation file structure
-  - `tests.instructions.md` - Test writing guidelines
-- **`.github/copilot-instructions.md`** - GitHub Copilot-specific guidance
+- **`AGENTS.md`** - Primary instruction file with project overview, workflow, and validation guidelines
+- **`.github/instructions/*.instructions.md`** - 16 path-specific instruction files for different file types (Python, YAML, JSON, config flows, entities, repairs, etc.)
+- **`.github/copilot-instructions.md`** - GitHub Copilot-specific workflow guidance
+- **`.github/COPILOT_CODING_AGENT.md`** - Guide for using GitHub Copilot Coding Agent with this template
 
-**What these instructions provide:**
+**Benefits:**
 
-- Integration-specific naming and structure guidelines
-- Home Assistant Core development patterns and best practices
-- Code quality baselines (type hints, async patterns, error handling)
-- Common pitfalls to avoid
-- Project-specific conventions and architectural decisions
-- Task tracking and workflow patterns for complex multi-step work
+- ✅ **Consistent code quality** - AI generates code that passes validation on first run
+- ✅ **Home Assistant patterns** - Follows Core development standards automatically
+- ✅ **Context-aware** - File-specific instructions ensure appropriate patterns
+- ✅ **Faster development** - Less iteration, more productive sessions
+- ✅ **Autonomous initialization** - Copilot Coding Agent can initialize projects from template
 
-**Benefits for AI-assisted development:**
+**Using Copilot Coding Agent:**
 
-- ✅ **Consistent code quality** - AI agents understand project standards and generate code that passes validation
-- ✅ **Reduced iteration** - Instructions help agents make correct decisions on first try
-- ✅ **Home Assistant patterns** - Agents know integration-specific requirements and Core best practices
-- ✅ **Context-aware suggestions** - File-specific instructions ensure appropriate patterns for each context
-- ✅ **Faster development** - Less back-and-forth, more productive coding sessions
+When creating a new repository from this template, you can provide initialization instructions to **GitHub Copilot Coding Agent** ([github.com/copilot/agents](https://github.com/copilot/agents)):
 
-**Usage:**
+1. Click "Use this template" on GitHub
+2. In the optional prompt field, provide your integration details (domain, title, repository)
+3. The agent will run `initialize.sh` in unattended mode and create a pull request
 
-Most AI agents will automatically discover and use these instruction files. GitHub Copilot reads `.github/copilot-instructions.md` by default, while other agents typically respect `AGENTS.md` and path-specific `.instructions.md` files.
+See [`.github/COPILOT_CODING_AGENT.md`](.github/COPILOT_CODING_AGENT.md) for detailed instructions and example prompts.
 
-When working with AI assistants, you can reference these instructions explicitly (e.g., "Follow the patterns in AGENTS.md") or let the agent discover them automatically.
+**For complete details:**
+
+See [`docs/development/ARCHITECTURE.md`](docs/development/ARCHITECTURE.md#ai-agent-instructions) for the full list of instruction files, their purpose, and application patterns.
 
 **Maintaining instructions:**
 

@@ -21,72 +21,31 @@ This is a Home Assistant custom integration that was generated from a blueprint 
 
 **Local Home Assistant instance:**
 
-When testing the integration, you'll need to run Home Assistant locally using `./script/develop`. Important considerations:
+Test the integration using `./script/develop`. Important:
 
-- **Assume unpredictable state** - Developer may have an instance running, or may have stopped it
-- **You can force restart anytime** - Use commands that ensure clean state
-- **Avoid checking if running** - This leads to unnecessary loops and confusion
+- **Force restart approach:** `pkill -f "hass --config" || true && pkill -f "debugpy.*5678" || true && ./script/develop`
+- Kills any existing instance (hass + debugpy on port 5678) and starts fresh
+- Avoids state confusion and port conflicts
 
-**Recommended approach for starting Home Assistant:**
-
-```bash
-# Kill any existing instance first, then start fresh
-pkill -f "hass --config" || true && pkill -f "debugpy.*5678" || true && ./script/develop
-```
-
-This ensures:
-
-- Any existing instance (yours or developer's) is stopped
-- The debugpy debugger process on port 5678 is terminated
-- Fresh start with known state
-- No ambiguity about what's running
-- `|| true` prevents error if nothing was running
-
-**Why kill debugpy?** The `./script/develop` script starts Home Assistant with debugpy listening on port 5678. If you only kill the `hass` process but not debugpy, the port remains blocked and prevents clean restarts.
-
-**When to restart Home Assistant:**
-
-- After modifying integration code (Python files)
-- After changing `manifest.json` or `services.yaml`
-- After updating translations
-- When testing config flow changes
-- When log output is needed to verify behavior
+**When to restart:** After modifying Python files, `manifest.json`, `services.yaml`, translations, or config flow changes
 
 **Reading logs:**
 
-- Live logs: Shown directly in terminal where `./script/develop` runs
-- Log file: `config/home-assistant.log` (most recent)
-- Previous log: `config/home-assistant.log.1`
+- Live: Terminal where `./script/develop` runs
+- File: `config/home-assistant.log` (most recent), `config/home-assistant.log.1` (previous)
 
 **Adjusting log levels:**
 
-The `config/configuration.yaml` contains log level configuration optimized for integration development:
-
-- **Your integration:** `custom_components.ha_integration_domain: debug` (shows everything)
-- **Most HA components:** Reduced to `warning` or `error` to minimize noise
-- **Important helpers:** `update_coordinator`, `entity_registry`, `config_entries` set to `info`
-
-**When you need more logging from a specific component:**
-
-1. Check `config/configuration.yaml` under `logger: logs:` section
-2. Add or modify the log level for the component you need
-3. Restart Home Assistant to apply changes
-
-Example - if you need to see HTTP requests:
-
-```yaml
-logger:
-  logs:
-    homeassistant.components.http: debug  # Change from warning to debug
-```
-
-**You are allowed to modify log levels in configuration.yaml** when debugging requires visibility into specific components. Just restart Home Assistant after changes.
+- Integration logs: `custom_components.ha_integration_domain: debug` in `config/configuration.yaml`
+- You can modify log levels when debugging - just restart HA after changes
 
 **Context-specific instructions:**
 
 If you're using GitHub Copilot, path-specific instructions in `.github/instructions/*.instructions.md` provide additional guidance for specific file types (Python, YAML, JSON, etc.). This document serves as the primary reference for all agents.
 
 ## Working With Developers
+
+**For workflow basics (small changes, translations, tests, session management):** See `.github/copilot-instructions.md` for quick-reference guidance.
 
 ### When Instructions Conflict With Requests
 
@@ -97,264 +56,99 @@ If a developer requests something that contradicts these instructions:
 3. **Suggest instruction updates** - If this represents a permanent change in approach, offer to update these instructions
 4. **Proceed once confirmed** - Follow the developer's explicit direction after clarification
 
-**Example:**
-> "These instructions specify 4-space indentation, but you're asking for tabs. Should I proceed with tabs for this file, or would you like me to update the project guidelines?"
-
 ### Maintaining These Instructions
 
 **This project was recently initialized from a template.** Instructions should evolve as the project matures:
 
-- **Refine guidelines** based on actual project needs
-- **Remove outdated rules** that no longer apply
-- **Consolidate redundant sections** to prevent bloat
-- **Keep files focused** - Move architectural decisions to `docs/development/`
-
-**Critical: Keep instruction files manageable.**
-
-- `AGENTS.md` should stay under ~650 lines
-- Path-specific `.instructions.md` files should stay under ~300 lines each
-- When adding new rules, consider removing or consolidating old ones
-- Archive historical context in separate documentation, not in instructions
+- Refine guidelines based on actual project needs
+- Remove outdated rules that no longer apply
+- Consolidate redundant sections to prevent bloat
+- Keep files focused - Move architectural decisions to `docs/development/`
 
 **Propose updates when:**
 
 - You notice repeated deviations from documented patterns
 - Instructions become outdated or contradict actual code
 - New patterns emerge that should be standardized
-- Files are approaching size limits
 
 ### Documentation vs. Instructions
 
 **Three types of content with clear separation:**
 
-1. **Agent Instructions** - How AI should write code
-   - Location: `.github/instructions/`, `AGENTS.md`
-   - Audience: AI agents and maintainers
-   - Maintained collaboratively
+1. **Agent Instructions** - How AI should write code (`.github/instructions/`, `AGENTS.md`)
+2. **Developer Documentation** - Architecture and design decisions (`docs/development/`)
+3. **User Documentation** - End-user guides (`docs/user/`)
 
-2. **Developer Documentation** - Architecture and design decisions
-   - Location: `docs/development/`
-   - Files: `ARCHITECTURE.md`, `DECISIONS.md`, optional `ROADMAP.md`
-   - Audience: Integration developers and maintainers
-   - Created when asked, or suggested for significant architectural decisions
+**AI Planning:** Use `.ai-scratch/` for temporary notes (never committed)
 
-3. **User Documentation** - End-user guides and help
-   - Location: `docs/user/`
-   - Files: `GETTING_STARTED.md`, `CONFIGURATION.md`, optional `EXAMPLES.md`
-   - Audience: Home Assistant users installing this integration
-   - Created when asked, or suggested for complex features
+**Rules:**
 
-**AI Planning and Temporary Notes:**
-
-- Location: `.ai-scratch/` (ignored by git)
-- Purpose: Temporary planning, task breakdowns, implementation notes
-- Only for AI use during complex work - never committed
-- Keep files focused: `plan.md`, `notes.md`, `refactoring.md`
-
-**Rules for creating documentation:**
-
-- ❌ **NEVER** create random markdown files (README.md, GUIDE.md, etc.) in code directories
-- ❌ **NEVER** create markdown files outside `docs/` or `.ai-scratch/` without explicit permission
-- ❌ **NEVER** create "helpful" READMEs in package directories - use module docstrings instead
+- ❌ **NEVER** create random markdown files in code directories
 - ✅ **ALWAYS ask first** before creating permanent documentation
-- ✅ **Prefer module/class/function docstrings** over separate markdown files
-- ✅ **Prefer extending** existing docs over creating new files
-- ✅ **Suggest documentation** for complex features or significant decisions (but ask first!)
-- ✅ **Use `.ai-scratch/`** for all temporary planning and notes
+- ✅ **Prefer module docstrings** over separate markdown files
 
-**The developer can see the structure through:**
-
-- VS Code's file tree and symbol navigation
-- Google-style docstrings in code
-- Type hints and function signatures
-- Module-level documentation strings
-
-**Example suggestions:**
-
-- "This architectural decision affects the coordinator design. Should I document it in `docs/development/DECISIONS.md`?"
-- "This config flow has many options. Would you like me to create user documentation in `docs/user/CONFIGURATION.md`?"
-- "I'll create a temporary plan in `.ai-scratch/plan.md` to track this multi-step refactoring."
+See `.github/copilot-instructions.md` for detailed documentation strategy.
 
 ### Session and Context Management
 
 **Commit suggestions:**
 
-When a task completes and the developer moves to a new topic, suggest committing changes before proceeding. Offer a commit message based on the work done - you have the full context now, they won't later.
+When a task completes and the developer moves to a new topic, suggest committing changes. Offer a commit message based on the work done.
 
-**Commit message format:**
+**Commit message format:** Follow [Conventional Commits](https://www.conventionalcommits.org/) specification
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
+**Common types:** `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
 
-```text
-type(scope): short summary (max 72 chars)
+See `.github/copilot-instructions.md` for commit message examples and context monitoring guidance.
 
-- Optional detailed points
-- Reference issues if applicable
-```
+## Custom Integration Flexibility
 
-**Always check git diff first** - don't rely on session memory. Include all changes in your message.
+**This is a CUSTOM integration, not a Home Assistant Core integration.** While we follow Core patterns for quality and maintainability, we have more flexibility in implementation decisions:
 
-**Common types:**
+**Third-party libraries (PyPI):**
 
-- `feat:` - User-facing functionality (new sensor, service, config option)
-- `fix:` - Bug fixes (user-facing issues)
-- `chore:` - Dev tools, dependencies, devcontainer (NOT user-facing)
-- `refactor:` - Code restructuring (no functional change)
-- `docs:` - Documentation changes
+- ✅ Prefer existing PyPI libraries when maintained and fit the use case
+- ✅ Build custom API client when:
+  - Device/service uses simple REST API or GraphQL (HTTP, JSON)
+  - Available libraries are unmaintained, bloated, or poorly designed
+  - Using aiohttp + json is more maintainable than a framework
 
-**Examples:**
+**Decision process:**
 
-```text
-feat(sensor): add air quality index sensor
+1. Research available libraries (PyPI, GitHub)
+2. Evaluate: Maintained? Async? Well-documented? Dependency footprint?
+3. Consider protocol: Simple REST → aiohttp; Complex OAuth2 → library; Standard (MQTT) → industry library
+4. Document decision in `docs/development/DECISIONS.md`
 
-fix(config_flow): validate host format before connection
-- Fixes #123
-```
+**Quality Scale expectations:**
 
-**Context monitoring:**
+As an AI agent, **aim for Silver or Gold Quality Scale** when generating code:
 
-If context grows large (~50k+ tokens) and a new topic starts, warn the developer and offer to create a session summary. Suggest once per topic transition, then respect their decision.
+- ✅ **Always implement:** Type hints, async patterns, proper error handling, service registration in `async_setup()`, diagnostics with `async_redact_data()`, device info
+- 🎯 **When applicable:** Config flow with validation, reauth flow, discovery support, repair flows
+- 📋 **Can defer:** Multiple config entries, advanced discovery, YAML import, extensive test coverage
+
+**Developer expectation:** Generate production-ready code. Implement HA standards with reasonable effort.
+
+**Other flexibility:** Discovery can be added later; breaking changes allowed with documentation; experimental features acceptable.
 
 ## Code Style and Quality
 
-### Python (`.py` files)
+**Python:** 4 spaces, 120 char lines, double quotes, full type hints, async for all I/O
 
-**Formatting:**
+**YAML:** 2 spaces, modern HA syntax (no legacy `platform:` style)
 
-- 4 spaces for indentation (never tabs)
-- Max line length: 120 characters
-- Use double quotes for strings consistently
+**JSON:** 2 spaces, no trailing commas, no comments
 
-**Type annotations:**
+**Validation:** Run `script/check` before committing (runs type-check + lint + spell)
 
-- Use type hints for all function parameters and return values
-- Import from `typing` or `collections.abc` as needed
-- Use `from __future__ import annotations` for forward references
+**For comprehensive standards, see:**
 
-**Common type annotation patterns:**
+- `.github/instructions/python.instructions.md` - Python patterns, imports, type hints
+- `.github/instructions/yaml.instructions.md` - YAML structure and HA-specific patterns
+- `.github/instructions/json.instructions.md` - JSON formatting and schema validation
 
-```python
-from __future__ import annotations
-
-from typing import Any
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
-# Platform setup
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up sensor platform."""
-
-# Coordinator with typed data
-class IntegrationBlueprintDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Class to manage fetching data from the API."""
-
-# Entity with coordinator
-class IntegrationBlueprintSensor(
-    CoordinatorEntity[IntegrationBlueprintDataUpdateCoordinator],
-    SensorEntity,
-):
-    """Representation of a sensor."""
-```
-
-**Async patterns:**
-
-- All I/O operations must be async (never block the event loop)
-- Use `async def` for coroutines
-- Prefer `asyncio.timeout()` over deprecated `async_timeout`
-- Use `asyncio.gather()` for concurrent operations
-
-**Import order:**
-
-1. Future imports (`from __future__ import annotations`)
-2. Standard library
-3. Third-party libraries
-4. Home Assistant core imports
-5. Local integration imports
-
-Use standard Home Assistant import aliases:
-
-```python
-import voluptuous as vol
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
-from homeassistant.util import dt as dt_util
-```
-
-**Naming conventions:**
-
-- Classes: `PascalCase` (prefix with `IntegrationBlueprint` namespace)
-- Functions/variables: `snake_case`
-- Constants: `UPPER_SNAKE_CASE`
-- Private members: `_leading_underscore`
-
-**Docstrings:**
-
-- Use Google-style docstrings for all public classes and functions
-- Include links to Home Assistant documentation where relevant
-- Document non-obvious parameters; obvious ones can be omitted
-
-**Error handling:**
-
-- Use specific exception types
-- Log errors appropriately (`_LOGGER.error()`, `_LOGGER.warning()`)
-- Handle coordinator failures gracefully (entities become unavailable)
-- Never let exceptions crash the integration
-
-**Home Assistant specific "Don'ts":**
-
-- ❌ **NEVER** use `time.sleep()` - Use `await asyncio.sleep()` instead
-- ❌ **NEVER** use blocking I/O in async functions - Use aiohttp, aiofiles, etc.
-- ❌ **NEVER** access `hass.states` directly in entities - Use coordinator data
-- ❌ **NEVER** import from other integrations (`homeassistant.components.X`) - Only from your own integration
-- ❌ **NEVER** hardcode URLs, API keys, or secrets - Use config entries or constants
-- ❌ **NEVER** modify `hass.data` from outside `async_setup_entry` - Use coordinator for shared data
-- ❌ **NEVER** use `@property` methods that do I/O - Properties must be synchronous
-- ❌ **NEVER** catch broad exceptions without re-raising (`except Exception: pass`) - Always log and handle appropriately
-
-### YAML Files
-
-**Home Assistant configuration and blueprints:**
-
-- 2 spaces for indentation
-- Use modern trigger/condition/action syntax (not legacy `platform:` style)
-- Always include descriptive `alias:` for automations
-- Use proper service call syntax: `service: domain.service_name`
-
-**Example (modern style):**
-
-```yaml
-automation:
-  - alias: "Example automation"
-    trigger:
-      - trigger: state
-        entity_id: binary_sensor.example
-        to: "on"
-    condition:
-      - condition: state
-        entity_id: input_boolean.enable
-        state: "on"
-    action:
-      - action: light.turn_on
-        target:
-          entity_id: light.example
-```
-
-### JSON Files
-
-**Configuration files (manifest.json, etc.):**
-
-- 2 spaces for indentation
-- No trailing commas
-- No comments (JSON spec doesn't support them)
-- Validate against schema when available
+**GitHub Copilot users:** These instruction files are automatically provided based on file type.
 
 ## Project-Specific Rules
 
@@ -375,52 +169,185 @@ This integration uses the following identifiers consistently:
 
 ### Integration Structure
 
-**Entity organization:**
+**Package organization:**
 
-- Each platform has its own directory: `sensor/`, `binary_sensor/`, `switch/`, etc.
-- Platform `__init__.py` contains `async_setup_entry()` and entity list
+- `api/` - API client and exceptions
+- `coordinator/` - Data update coordinator
+- `config_flow_handler/` - Config flow, options, validators
+- `entity/` - Base entity classes
+- `[platform]/` - Entity platforms (sensor, switch, etc.)
+- `services/` - Service implementations
+- `utils/` - Shared utilities
+
+**Key patterns:**
+
+- Entities → Coordinator → API Client (never skip layers)
+- Each platform in own directory with `__init__.py`
+- One entity class per file for clarity
 - Individual entity classes in separate files (e.g., `air_quality.py`)
 - Use `EntityDescription` dataclasses for static entity metadata
 
 **Code organization principles:**
 
-- **Keep files focused and manageable** - Aim for 200-400 lines per file maximum
-- **Split large modules** - If a file exceeds ~500 lines, refactor into smaller modules
-- **One class per file** for entity implementations (sensors, switches, etc.)
-- **Group related utilities** - Helper functions in `utils/`, shared types in separate files
-- **Avoid monolithic files** - You need to be able to read and modify these files later
+- Keep files focused (200-400 lines per file)
+- One class per file for entity implementations
+- Split large modules into smaller ones when needed
 
-**When files grow too large:**
+**For detailed patterns, see:**
 
-1. Extract helper functions to `utils/` directory
-2. Split entity classes into separate files
-3. Move constants to `const.py`
-4. Create subpackages for related functionality
-5. Use clear, descriptive file names
-
-**Remember:** AI models have context limits. Keep files small enough to process efficiently.
-
-**Coordinator pattern:**
-
-- All data fetching goes through `IntegrationBlueprintDataUpdateCoordinator`
-- Entities inherit from both platform base and `IntegrationBlueprintEntity`
-- Update interval configured in `coordinator.py`
-- Handle `UPDATE_FAILED` exceptions gracefully
-
-**API client:**
-
-- Keep API logic in `api/client.py`
-- Use aiohttp for HTTP requests
-- Implement proper error handling and timeouts
-- Raise custom exceptions from `exceptions.py`
+- `.github/instructions/entities.instructions.md` - Entity platform patterns
+- `.github/instructions/coordinator.instructions.md` - Coordinator implementation
+- `.github/instructions/api.instructions.md` - API client patterns
 
 ### Device Info
 
-All entities should provide consistent device info via the base entity class. Device info should include:
+All entities should provide consistent device info via the base entity class (manufacturer, model, serial number, configuration URL, firmware version).
 
-- Manufacturer, model, serial number
-- Configuration URL if applicable
-- Software/firmware version if available
+### Integration Manifest
+
+**Key fields in `manifest.json`:**
+
+**integration_type** (CRITICAL):
+
+- `hub` - Gateway to multiple devices/services (e.g., Philips Hue bridge)
+- `device` - Single device per config entry (e.g., ESPHome device)
+- `service` - Single service per config entry (e.g., DuckDNS)
+- `helper` - Helper entity (e.g., input_boolean, group)
+- `virtual` - Points to another integration/IoT standard (not for custom integrations)
+
+**Rule:** Hub vs Service/Device is defined by nature: Hub = gateway to multiple devices/services; Service/Device = one per config entry.
+
+**quality_scale:**
+
+- Required for Core integrations (minimum `bronze`)
+- Optional for custom integrations (not displayed in HA UI)
+- Levels: `bronze`, `silver`, `gold`, `platinum`, `internal`
+- If included, serves as self-documentation of code quality goals
+- See [Integration Quality Scale](https://developers.home-assistant.io/docs/core/integration-quality-scale)
+
+**iot_class:**
+
+- `cloud_polling`, `cloud_push`, `local_polling`, `local_push`, `assumed_state`, `calculated`
+
+**dependencies vs after_dependencies:**
+
+- `dependencies` - Required, integration won't load without them
+- `after_dependencies` - Optional, waits if configured
+
+**Discovery methods:** `bluetooth`, `dhcp`, `homekit`, `mqtt`, `ssdp`, `usb`, `zeroconf`
+
+- Define matchers in manifest
+- Requires corresponding `async_step_<method>()` in config flow
+- Unique ID required for discovery
+
+**single_config_entry:** Set `true` to allow only one config entry per integration
+
+See `.github/instructions/manifest.instructions.md` for comprehensive manifest documentation.
+
+### Config Flow Best Practices
+
+**Reserved step names:**
+
+- Discovery: `bluetooth`, `dhcp`, `homekit`, `mqtt`, `ssdp`, `usb`, `zeroconf`
+- System: `user`, `reauth`, `reconfigure`, `import`
+
+**Unique ID requirements (CRITICAL):**
+
+- Acceptable: Serial number, MAC address, device ID, account ID
+- Unacceptable: IP address, device name, hostname, URL
+
+**Reconfigure vs Reauth:**
+
+- `reconfigure` - Change config data (host, settings)
+- `reauth` - Handle expired credentials
+
+**Config entry migration:**
+
+- Define `VERSION` and `MINOR_VERSION` in ConfigFlow
+- Implement `async_migrate_entry()` in `__init__.py`
+- Update entry with `hass.config_entries.async_update_entry()`
+- Return `False` to reject downgrades
+
+**Scaffold commands:**
+
+```bash
+python3 -m script.scaffold config_flow_discovery  # Discoverable, no auth
+python3 -m script.scaffold config_flow_oauth2     # OAuth2 flow
+```
+
+## Home Assistant Patterns
+
+**Config flow:**
+
+- Implement in `config_flow_handler/` package
+- Support user setup, discovery, reauth, reconfigure
+- Always set unique_id for discovered entries
+
+See `.github/instructions/config_flow.instructions.md` for comprehensive patterns.
+
+**Services:**
+
+- Define in `services.yaml` with full descriptions
+- Implement handlers in `services/` directory
+- **Register in `async_setup()`** - NOT in `async_setup_entry()` (Quality Scale!)
+- Format: `<integration_domain>.<action_name>`
+
+See `.github/instructions/services.instructions.md` for service patterns.
+
+**Coordinator:**
+
+- Entities → Coordinator → API Client (never skip layers)
+- Raise `ConfigEntryAuthFailed` (triggers reauth) or `UpdateFailed` (retry)
+- Use `async_config_entry_first_refresh()` for first update
+
+See `.github/instructions/coordinator.instructions.md` and `.github/instructions/api.instructions.md` for details.
+
+**Entities:**
+
+- Inherit from platform base + `IntegrationBlueprintEntity`
+- Read from `coordinator.data`, never call API directly
+- Use `EntityDescription` for static metadata
+
+See `.github/instructions/entities.instructions.md` for entity patterns.
+
+**Repairs:**
+
+- Create `repairs.py` in integration root (Gold Quality Scale)
+- Use `async_create_issue()` with severity levels (WARNING, ERROR, CRITICAL)
+- Implement `RepairsFlow` for guided user fixes
+- Delete issues after successful repair
+
+See `.github/instructions/repairs.instructions.md` for comprehensive patterns.
+
+**Entity availability:**
+
+- Set `_attr_available = False` when device is unreachable
+- Update availability based on coordinator success/failure
+- Don't raise exceptions from `@property` methods
+
+**State updates:**
+
+- Use `self.async_write_ha_state()` for immediate updates
+- Let coordinator handle periodic updates
+- Minimize API calls (batch requests when possible)
+
+**Setup failure handling:**
+
+- `ConfigEntryNotReady` - Device offline/timeout, auto-retry, don't log manually (HA logs at debug)
+- `ConfigEntryAuthFailed` - Expired credentials, triggers reauth flow, alternative: `entry.async_start_reauth()`
+
+**Diagnostics:**
+
+- **CRITICAL:** Use `async_redact_data()` from `homeassistant.helpers.redact` to remove sensitive data
+- Redact: Passwords, API keys, tokens, location data, personal information
+
+**YAML Configuration:**
+
+⚠️ **DEPRECATED** for integrations communicating with devices/services (ADR-0010)
+
+- New integrations MUST use config flow
+- Existing YAML integrations should migrate to config flow
+- Only helpers and system integrations may use YAML
 
 ## Validation Scripts
 
@@ -439,35 +366,20 @@ script/test       # Run unit tests
 - **Pyright** - Type checker configured for "basic" mode ([Docs](https://microsoft.github.io/pyright/))
 - **pytest** - Test runner with async support ([Docs](https://docs.pytest.org/))
 
-**Use these tools proactively:**
+**Generate code that passes these checks on first run.** As an AI agent, you should produce higher quality code than manual development:
 
-- Run `script/check` while developing, not just before committing
-- Look up specific Ruff error codes to understand issues
-- Check Pyright documentation when type errors are unclear
-- These tools are your friends - consult their docs liberally
+- Type hints are trivial for you to generate
+- Async patterns are well-known to you
+- Import management is automatic for you
+- Naming conventions can be applied consistently
 
-**Linter overrides:**
+Aim for zero validation errors in generated code. The developer expects production-ready output.
+
+See `.github/instructions/python.instructions.md` for linter overrides and error recovery strategies.
 
 - You may use `# noqa: CODE` or `# type: ignore` when genuinely necessary
 - Use sparingly and only with good reason (e.g., false positives, external library issues)
-- Always include the specific error code, never blanket `# noqa`
-- Add a comment explaining why the override is needed
-- Prefer fixing the underlying issue over suppressing warnings
-
-**Example:**
-
-```python
-from external_lib import something  # noqa: F401 - Required for plugin registration
-result = complex_type_inference()  # type: ignore[attr-defined] - Library lacks stubs
-```
-
-**Common issues to avoid:**
-
-- Missing type annotations
-- Using sync I/O in async functions
-- Importing from `tests` in production code
-- Unused imports or variables (Ruff will catch these)
-- Magic values without constants (use module-level CONSTANTS)
+See `.github/instructions/python.instructions.md` for linter overrides and error recovery strategies.
 
 ### Error Recovery Strategy
 
@@ -509,47 +421,18 @@ result = complex_type_inference()  # type: ignore[attr-defined] - Library lacks 
 **Test structure:**
 
 - `tests/` mirrors `custom_components/ha_integration_domain/` structure
-- Mark tests: `@pytest.mark.unit` for fast tests, `@pytest.mark.integration` for coordinator tests
 - Use fixtures for common setup (Home Assistant mock, coordinator, etc.)
 - Mock external API calls
 
 **Running tests:**
 
 ```bash
-script/test              # All tests
-script/test --cov-html   # With coverage report
+script/test                           # All tests
+script/test --cov-html                # With coverage report
+script/test --snapshot-update         # Update Syrupy snapshots
 ```
 
-## Home Assistant Patterns
-
-**Config flow:**
-
-- Main implementation in `config_flow_handler/config_flow.py`
-- Options flow in `config_flow_handler/options_flow.py`
-- Schemas organized in `config_flow_handler/schemas/`
-- Validators in `config_flow_handler/validators/`
-- Support reauthentication via `async_step_reauth()`
-- Validate user input and show appropriate errors
-- Use `DOMAIN` constant for all references
-
-**Services:**
-
-- Define in `services.yaml` with full descriptions
-- Implement handlers in `services/` directory
-- Use voluptuous schemas for validation
-- Register in `async_setup_entry()`
-
-**Entity availability:**
-
-- Set `_attr_available = False` when device is unreachable
-- Update availability based on coordinator success/failure
-- Don't raise exceptions from `@property` methods
-
-**State updates:**
-
-- Use `self.async_write_ha_state()` for immediate updates
-- Let coordinator handle periodic updates
-- Minimize API calls (batch requests when possible)
+See `.github/instructions/tests.instructions.md` for comprehensive testing patterns.
 
 ## Breaking Changes
 
@@ -587,40 +470,30 @@ script/test --cov-html   # With coverage report
 **Single logical feature or fix:**
 
 - Implement completely even if it spans 5-8 files
-- Example: New sensor needs entity class + platform init + translations + tests → implement all together
+- Example: New sensor needs entity class + platform init + code → implement all together
 - Example: Bug fix requires changes in coordinator + entity + error handling → do all at once
 
 **Multiple independent features:**
 
 - Implement one at a time
 - After completing each feature, suggest committing before proceeding to the next
-- Example: "Add 3 different sensors" → implement first sensor completely, offer to commit, then proceed with second
 
 **Large refactoring (>10 files or architectural changes):**
 
 - Propose a plan first before starting implementation
 - Get explicit confirmation from developer
-- Example: "Restructure coordinator to support multiple devices" → outline approach, wait for approval
 
-**When in doubt:**
+**Important: Do NOT create or modify tests unless explicitly requested.** Focus on implementing functionality. The developer decides when and if tests are needed.
 
-- Prefer completing the current logical unit over stopping mid-implementation
-- If the scope seems unclear, ask: "Should I implement X completely, or would you prefer to review after Y?"
+**Translation strategy:**
 
-**When modifying files:**
+- Use placeholders in code (e.g., `"config.step.user.title"`) - functionality works without translations
+- Update `en.json` only when asked or at major feature completion
+- NEVER update other language files automatically - extremely time-consuming
+- Ask before updating multiple translation files
+- Priority: Business logic first, translations later
 
-- Keep changes focused and minimal
-- Update docstrings if behavior changes
-- Run validation scripts before considering the task complete
-
-**Important: Do NOT create or modify tests unless explicitly requested.** Your primary task is implementing functionality and fixing bugs. The developer will decide if and when tests are needed.
-
-**When creating new entities:**
-
-1. Create entity file in appropriate platform directory
-2. Add entity class inheriting from platform + `IntegrationBlueprintEntity`
-3. Add `EntityDescription` if applicable
-4. Update platform `__init__.py` to include new entity
+See `.github/copilot-instructions.md` for detailed workflow guidance.
 
 ## Research and Validation
 

@@ -1,5 +1,9 @@
 # GitHub Copilot Instructions
 
+> **Note:** For comprehensive documentation including validation, testing, error recovery, and detailed Home Assistant patterns, see [`AGENTS.md`](../AGENTS.md) at the repository root.
+>
+> **Why two files?** This file is optimized for GitHub Copilot's quick reference (~200 lines, actionable patterns). `AGENTS.md` is comprehensive documentation for all AI agents (551 lines, detailed context, troubleshooting).
+
 This file provides specific guidance for GitHub Copilot when generating code for this Home Assistant integration.
 
 ## Critical Reminders
@@ -28,14 +32,26 @@ Before considering any coding task complete, the following must pass:
 script/check      # Runs type-check + lint-check + spell-check
 ```
 
-Generate code that passes these checks on first run. Common pitfalls:
+Generate code that passes these checks on first run.
 
-- Missing type annotations → Pyright fails
-- Unused imports → Ruff fails
-- Blocking I/O in async functions → Design flaw
-- Magic numbers → Use module constants
+## Architecture Overview
 
-**Linter overrides:** You may use `# noqa: CODE` or `# type: ignore` when necessary, but use sparingly with specific codes and explanatory comments. Prefer fixing issues over suppressing them.
+**Data Flow:** Entities → Coordinator → API Client (never skip layers)
+
+**Package Structure:**
+
+- `coordinator/` - DataUpdateCoordinator (base.py + data_processing.py + error_handling.py + listeners.py)
+- `api/` - External API client with async aiohttp
+- `entity/` - Base entity class (`IntegrationBlueprintEntity`)
+- `config_flow_handler/` - Config flow with schemas/ and validators/ subdirs
+- `[platform]/` - One directory per platform (sensor, switch, etc.), one class per file
+
+**Key Patterns:**
+
+- All entities inherit: `(PlatformEntity, IntegrationBlueprintEntity)` - order matters for MRO
+- Unique ID format: `{entry_id}_{description.key}` (set in base entity)
+- Services registered in `async_setup()`, NOT `async_setup_entry()` (Quality Scale requirement)
+- Config entry data accessed via `entry.runtime_data.client` and `entry.runtime_data.coordinator`
 
 ## Workflow Approach
 
@@ -45,7 +61,33 @@ Generate code that passes these checks on first run. Common pitfalls:
 4. **Validation** - Run `script/check` to ensure code quality
 5. **File organization** - Keep files manageable (~200-400 lines). Split large files into smaller modules.
 
+**Scope Management:**
+
+**Single logical feature or fix:**
+
+- Implement completely even if it spans 5-8 files
+- Example: New sensor needs entity class + platform init + code → implement all together
+- Example: Bug fix requires changes in coordinator + entity + error handling → do all at once
+
+**Multiple independent features:**
+
+- Implement one at a time
+- After completing each feature, suggest committing before proceeding to the next
+
+**Large refactoring (>10 files or architectural changes):**
+
+- Propose a plan first before starting implementation
+- Get explicit confirmation from developer
+
 **Important: Do NOT write tests unless explicitly requested.** Focus on implementing functionality. The developer decides when and if tests are needed.
+
+**Translation strategy:**
+
+- Use placeholders in code (e.g., `"config.step.user.title"`) - functionality works without translations
+- Update `en.json` only when asked or at major feature completion
+- NEVER update other language files automatically - extremely time-consuming
+- Ask before updating multiple translation files
+- Priority: Business logic first, translations later
 
 ## When Uncertain - Research First
 
@@ -65,6 +107,28 @@ If context is insufficient or requirements are ambiguous:
 
 Focus on maintainable, testable code that follows established patterns in the integration.
 
+## Local Development & Debugging
+
+**Start Home Assistant:**
+
+```bash
+./script/develop  # Kills existing instances, starts HA on port 8123
+```
+
+**Force restart (when needed):**
+
+```bash
+pkill -f "hass --config" || true && pkill -f "debugpy.*5678" || true && ./script/develop
+```
+
+**When to restart:** After modifying Python files, `manifest.json`, `services.yaml`, translations, or config flow changes
+
+**Reading logs:**
+
+- Live: Terminal where `./script/develop` runs
+- File: `config/home-assistant.log` (most recent), `config/home-assistant.log.1` (previous)
+- Adjust log level: `custom_components.ha_integration_domain: debug` in `config/configuration.yaml`
+
 ## Working With the Developer
 
 **When requests conflict with these instructions:**
@@ -83,12 +147,22 @@ Focus on maintainable, testable code that follows established patterns in the in
 
 **Documentation Strategy:**
 
-- **Developer docs:** Use `docs/development/` (architecture, decisions, internal design)
-- **User docs:** Use `docs/user/` (installation, configuration, examples for end-users)
-- **Temporary planning:** Use `.ai-scratch/` (never committed, AI-only scratch files)
-- **No random markdown files** - all documentation must go into `docs/` or `.ai-scratch/`
-- Prefer extending existing docs over creating new files
-- Don't write docs unless asked, but suggest when complex features need documentation
+**Three types of content with clear separation:**
+
+1. **Developer docs:** Use `docs/development/` (architecture, decisions, internal design)
+2. **User docs:** Use `docs/user/` (installation, configuration, examples for end-users)
+3. **Temporary planning:** Use `.ai-scratch/` (never committed, AI-only scratch files)
+
+**Rules for creating documentation:**
+
+- ❌ **NEVER** create random markdown files (README.md, GUIDE.md, etc.) in code directories
+- ❌ **NEVER** create markdown files outside `docs/` or `.ai-scratch/` without explicit permission
+- ❌ **NEVER** create "helpful" READMEs in package directories - use module docstrings instead
+- ✅ **ALWAYS ask first** before creating permanent documentation
+- ✅ **Prefer module/class/function docstrings** over separate markdown files
+- ✅ **Prefer extending** existing docs over creating new files
+- ✅ **Suggest documentation** for complex features or significant decisions (but ask first!)
+- ✅ **Use `.ai-scratch/`** for all temporary planning and notes
 
 **Session management:**
 
@@ -96,3 +170,24 @@ Focus on maintainable, testable code that follows established patterns in the in
 - Monitor context size - warn if getting large and new topic starts
 - Offer to create summary for fresh session if context is strained
 - Suggest once, don't nag if declined
+
+**Commit message format:**
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```text
+type(scope): short summary (max 72 chars)
+
+- Optional detailed points
+- Reference issues if applicable
+```
+
+**Always check git diff first** - don't rely on session memory. Include all changes in your message.
+
+**Common types:**
+
+- `feat:` - User-facing functionality (new sensor, service, config option)
+- `fix:` - Bug fixes (user-facing issues)
+- `chore:` - Dev tools, dependencies, devcontainer (NOT user-facing)
+- `refactor:` - Code restructuring (no functional change)
+- `docs:` - Documentation changes

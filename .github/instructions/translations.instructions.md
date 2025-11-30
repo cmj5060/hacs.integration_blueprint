@@ -8,181 +8,150 @@ applyTo: "**/translations/*.json"
 
 ## Schema Validation
 
-**Schema:** `/schemas/json/translation_schema.json`
+**Schema:** `/schemas/json/translation_schema.json` - Defines complete structure
 
 Translation files define user-facing text for config flows, options, entities, and errors.
 
-## Structure
+## File Location
+
+**Custom integrations** use the `translations/` folder with language-specific files:
+
+- `en.json` - English (required base language)
+- `de.json`, `fr.json`, etc. - Additional languages
+
+**Language codes:** BCP47 format (e.g., `en`, `de`, `fr-CA`)
+
+## Critical Instructions
+
+### Translation Placeholders
+
+**Runtime values:** Use `{variable}` syntax - replaced with actual values at runtime
+
+- Never translate placeholder names (e.g., `{host}` stays `{host}`, not `{hôte}`)
+- Placeholder names must match code exactly
+
+**Key references:** Use `[%key:...]` syntax to reuse translations
 
 ```json
 {
   "config": {
-    "step": {},
-    "error": {},
-    "abort": {}
-  },
-  "options": {
-    "step": {},
-    "error": {}
-  },
-  "entity": {},
-  "entity_component": {},
-  "selector": {},
-  "services": {}
-}
-```
-
-## Config Flow Translations
-
-**Step translations:**
-
-```json
-"config": {
-  "step": {
-    "user": {
-      "title": "Configure Integration Blueprint",
-      "description": "Enter your device details",
-      "data": {
-        "host": "Host",
-        "username": "Username",
-        "password": "Password"
-      },
-      "data_description": {
-        "host": "IP address or hostname of the device"
-      }
+    "error": {
+      "invalid_auth": "Invalid credentials",
+      "stale_auth": "[%key:component::ha_integration_domain::config::error::invalid_auth%]"
     }
   }
 }
 ```
 
-**Error translations:**
+**Reference Home Assistant common strings:**
 
 ```json
-"config": {
-  "error": {
-    "cannot_connect": "Failed to connect to the device",
-    "invalid_auth": "Invalid username or password",
-    "unknown": "An unexpected error occurred"
-  }
+"state": {
+  "off": "[%key:common::state::off%]",
+  "on": "[%key:common::state::on%]"
 }
 ```
 
-**Abort reasons:**
+### Entity Translations
 
-```json
-"config": {
-  "abort": {
-    "already_configured": "This device is already configured",
-    "reauth_successful": "Re-authentication successful"
-  }
-}
-```
+**Requirements in code:**
 
-## Entity Translations
+- Set `has_entity_name=True` on entity
+- Set `translation_key` property to match JSON key
+- For placeholders: Set `translation_placeholders` dict
 
-Override entity names and state values:
+**Example:**
 
 ```json
 "entity": {
   "sensor": {
     "air_quality": {
-      "name": "Air Quality Index"
-    },
-    "temperature": {
-      "name": "Temperature"
-    }
-  }
-}
-```
-
-## Entity Component Translations
-
-For entity attributes and states:
-
-```json
-"entity_component": {
-  "_": {
-    "name": "Integration Blueprint",
-    "state": {
-      "problem": {
-        "off": "OK",
-        "on": "Problem Detected"
+      "name": "Air Quality Index",
+      "state": {
+        "good": "Good",
+        "poor": "Poor"
       }
     }
   }
 }
 ```
 
-## Service Translations
+### Markdown Support
 
-Translate service names and descriptions:
+These fields support Markdown formatting:
+
+- Config/Options: `description`, `abort`, `progress`, `create_entry`
+- Issues: `title`, `description`
+
+### Proper Nouns
+
+**Never translate:**
+
+- Home Assistant
+- Supervisor
+- Brand names (product names)
+- Technical identifiers
+
+### Formality Level
+
+**Use informal language** in languages that distinguish between formal and informal address:
+
+- **German:** Use "du" (informal), not "Sie" (formal). Use correct imperative forms (e.g., "Gib", not "Gebe").
+- **French:** Use "tu" (informal), not "vous" (formal)
+- **Spanish:** Use "tú" (informal), not "usted" (formal)
+- Apply to all variations (we/you plural: wir/ihr, nous/vous, etc.)
+
+**Example (German):**
+
+- ✅ "Gib deine Anmeldedaten ein" (informal, correct imperative)
+- ❌ "Geben Sie Ihre Anmeldedaten ein" (formal)
+- ❌ "Gebe deine Anmeldedaten ein" (wrong imperative form)
+
+**German-specific rule:** Pay attention to correct imperative forms (Befehlsform). See [Duden: Bildung des Imperativs](https://www.duden.de/sprachwissen/sprachratgeber/Bildung-des-Imperativs).
+
+### Multi-Language Files
+
+All language files must have identical structure - only values differ:
+
+**en.json:**
 
 ```json
-"services": {
-  "reset_filter": {
-    "name": "Reset Filter",
-    "description": "Resets the filter replacement indicator"
-  }
-}
+{ "config": { "step": { "user": { "title": "Configure Device" } } } }
 ```
 
-## Selector Translations
-
-For custom selectors used in config/options:
+**de.json:**
 
 ```json
-"selector": {
-  "update_mode": {
-    "options": {
-      "auto": "Automatic",
-      "manual": "Manual"
-    }
-  }
-}
+{ "config": { "step": { "user": { "title": "Gerät konfigurieren" } } } }
 ```
-
-## Best Practices
-
-- Use clear, concise language
-- Provide helpful descriptions for non-obvious fields
-- Keep consistent terminology across translations
-- Include units where applicable
-- Use proper capitalization
-- Avoid technical jargon when possible
-
-## Multi-Language Support
-
-Create separate files for each language:
-
-- `en.json` - English (base language)
-- `de.json` - German
-- `fr.json` - French
-- etc.
-
-All files should have the same structure with translated values.
-
-## Translation Keys
-
-Keys reference config flow steps, entity IDs, and service names from code:
-
-- Config step: `config.step.{step_id}.title`
-- Error: `config.error.{error_key}`
-- Entity: `entity.{domain}.{entity_key}.name`
-- Service: `services.{service_name}.name`
 
 ## Common Mistakes
 
-- ❌ Inconsistent key structure across languages
-- ❌ Missing required keys (title, description)
-- ❌ Untranslated English text in non-English files
-- ❌ Invalid JSON syntax
-- ❌ Keys that don't match code
+- ❌ Translating placeholder names (e.g., `{host}` → `{hôte}`)
+- ❌ Translating proper nouns (Home Assistant, brand names)
+- ❌ Using formal language (Sie/vous) instead of informal (du/tu)
+- ❌ Missing `translation_key` in entity code
+- ❌ Using entity translations without `has_entity_name=True`
+- ❌ Inconsistent key structure across language files
+- ❌ Invalid JSON syntax (trailing commas, comments)
+- ❌ Wrong key reference syntax (must be exact: `[%key:...]`)
 
-## Validation
+## Best Practices
 
-Translation files are validated by Home Assistant on load. Missing keys fall back to entity/service names from code.
+**Translation Quality Guidelines:**
+
+1. **Only native speakers** should provide translations
+2. **Stick to [Material Design guidelines](https://material.io/design/communication/writing.html)** for writing
+3. **Don't translate proper nouns** (Home Assistant, Supervisor, brand names)
+4. **Keep badge labels short** - Test `state_badge` translations fit in UI without overflowing
+5. **Use key references** `[%key:...]` to avoid duplicate translations
+6. **Keep consistent terminology** within and across languages
+7. **Provide helpful descriptions** for non-obvious fields in `data_description`
+
+**For region-specific translations** (e.g., `en-US`, `fr-CA`): Only include if translations differ from base language. Clone unchanged keys from source (helps track review status).
 
 ## References
 
-- [Translation Documentation](https://developers.home-assistant.io/docs/internationalization/)
-- [Translation Best Practices](https://developers.home-assistant.io/docs/internationalization/core)
+- [Custom Integration Localization](https://developers.home-assistant.io/docs/internationalization/custom_integration) - **Primary reference**
+- [Backend Localization](https://developers.home-assistant.io/docs/internationalization/core) - Complete structure documentation
+- [ICU Message Format](https://formatjs.github.io/docs/core-concepts/icu-syntax/) - Placeholder syntax for plurals

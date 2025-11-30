@@ -309,7 +309,7 @@ async def async_press(self) -> None:
 
 - **Domain:** `ha_integration_domain`
 - **Class prefix:** `IntegrationBlueprint`
-- **Base entity:** `IntegrationBlueprintEntity` in `entity.py`
+- **Base entity:** `IntegrationBlueprintEntity` in `entity/base.py`
 - **Coordinator:** `IntegrationBlueprintDataUpdateCoordinator`
 
 Follow patterns from existing platforms in the integration for consistency.

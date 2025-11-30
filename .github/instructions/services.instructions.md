@@ -1,117 +1,158 @@
 ---
-applyTo: "**/services.yaml"
+applyTo: "custom_components/**/services/**/*.py"
 ---
 
-# Services Definition Instructions
+# Services Instructions
 
-**Applies to:** `services.yaml` files
+**Applies to:** Service implementation files
 
-## Schema Validation
+**Reference:** [Home Assistant Service Actions Documentation](https://developers.home-assistant.io/docs/dev_101_services/)
 
-**Schema:** `/schemas/yaml/services_schema.yaml`
+## Critical Rules
 
-This schema defines the complete structure for Home Assistant service definitions. Consult it when unsure about available fields or structure.
+**Registration location (Silver Quality Scale requirement):**
 
-## Structure
+- ✅ Register services in `async_setup()` (component level)
+- ❌ Never register in `async_setup_entry()` (per config entry)
+- Check `hass.services.has_service(DOMAIN, "service_name")` before registering
+
+**Service naming:**
+
+- Format: `<integration_domain>.<action_name>`
+- Always use integration DOMAIN, never platform domain (e.g., `sensor`, `switch`)
+
+**Implementation structure:**
+
+- Call `await async_setup_services(hass)` from `async_setup()` in `__init__.py`
+- Implement handlers in `services/__init__.py`
+- Handlers iterate over `hass.data[DOMAIN]` to access config entries
+
+## Service Schema
+
+Use voluptuous with `homeassistant.helpers.config_validation` for parameter validation:
+
+```python
+import voluptuous as vol
+from homeassistant.helpers import config_validation as cv
+
+SERVICE_SCHEMA = vol.Schema({
+    vol.Required("device_id"): cv.string,
+    vol.Optional("force", default=False): cv.boolean,
+})
+```
+
+## Exception Handling
+
+**Use appropriate exceptions:**
+
+- `ServiceValidationError` - User provided invalid data (no stack trace in logs except at debug level)
+- `HomeAssistantError` - Device/communication errors (full stack trace in logs)
+
+Both exceptions support translation keys for localization.
+
+## Target Field
+
+Use modern `target` field in `services.yaml` instead of deprecated `entity_id`:
 
 ```yaml
-service_name:
-  name: Human-Readable Name
-  description: Clear description of what the service does.
-  fields:
-    parameter_name:
-      name: Parameter Name
-      description: What this parameter does.
-      required: true
-      example: "example_value"
-      selector:
-        text:
+reset_filter:
   target:
     entity:
-      - domain: light
+      domain: sensor
 ```
 
-## Key Requirements
+## Response Data
 
-**Service definition:**
+Services can return JSON-serializable data (`homeassistant.util.json.JsonObjectType`) for use in automations:
 
-- `name` - User-visible name (required)
-- `description` - Clear explanation with Markdown support (required)
-- `fields` - Parameter definitions (optional)
-- `target` - Entity/device/area selector (optional)
+**Critical requirements:**
 
-**Field definition:**
+- Response MUST be a `dict`
+- **datetime objects MUST use `.isoformat()`** - Template engine cannot handle raw datetime
+- Raise exceptions for errors, never return error codes in response data
 
-- `name` - Field display name (required)
-- `description` - Field explanation (required)
-- `required` - Boolean, default false
-- `example` - Example value (recommended)
-- `default` - Default value (optional)
-- `selector` - UI selector type (recommended)
+**SupportsResponse modes:**
 
-## Selector Types
+- `SupportsResponse.OPTIONAL` - Returns data only if `call.return_response` is True
+- `SupportsResponse.ONLY` - Always returns data, performs no action
 
-Common selectors for service parameters:
+Example with datetime conversion:
 
-- `text:` - String input
-- `number:` - Numeric input with optional min/max/step
-- `boolean:` - Toggle switch
-- `select:` - Dropdown with options
-- `entity:` - Entity picker with optional domain filter
-- `device:` - Device picker with optional integration filter
-- `time:` - Time picker
-- `date:` - Date picker
-- `duration:` - Duration input
-- `color_rgb:` - RGB color picker
-- `template:` - Template input
+```python
+from homeassistant.core import SupportsResponse
 
-**Example with selector:**
+async def search_items(call: ServiceCall) -> ServiceResponse:
+    items = await client.search(call.data["start"], call.data["end"])
+    return {
+        "items": [
+            {
+                "summary": item["summary"],
+                "timestamp": item["timestamp"].isoformat(),  # ✅ Convert datetime!
+            }
+            for item in items
+        ],
+    }
 
-```yaml
-brightness:
-  name: Brightness
-  description: Brightness level (0-255)
-  required: false
-  example: 128
-  selector:
-    number:
-      min: 0
-      max: 255
-      step: 1
-      mode: slider
+hass.services.async_register(
+    DOMAIN, "search", search_items,
+    supports_response=SupportsResponse.ONLY,
+)
 ```
 
-## Target Selector
+## Entity Service Actions
 
-Use `target:` to allow users to select entities, devices, or areas:
+For services targeting entities, use `async_register_platform_entity_service`:
 
-```yaml
-turn_on:
-  name: Turn On
-  description: Turns on the device.
-  target:
-    entity:
-      - domain: light
-      - domain: switch
+```python
+from homeassistant.helpers import service
+
+service.async_register_platform_entity_service(
+    hass,
+    DOMAIN,  # Integration domain, NOT platform domain!
+    "set_timer",
+    entity_domain="media_player",
+    schema={vol.Required("sleep_time"): cv.time_period},
+    func="set_sleep_timer",  # Method name on entity class
+)
 ```
 
-**Important:** If `target:` is defined, do NOT define `entity_id` as a field.
+Alternative with custom handler function:
 
-## Best Practices
+```python
+async def custom_handler(entity, service_call):
+    """Custom handler logic."""
+    await entity.set_sleep_timer(service_call.data['sleep_time'])
 
-- Always provide meaningful descriptions
-- Include realistic examples for complex fields
-- Use appropriate selectors for better UI
-- Mark fields as required only when necessary
-- Keep service names verb-based (e.g., `set_mode`, `reset_filter`)
-- Validate against schema before committing
+service.async_register_platform_entity_service(
+    hass, DOMAIN, "set_timer",
+    entity_domain="media_player",
+    schema={vol.Required("sleep_time"): cv.time_period},
+    func=custom_handler,  # Function instead of method name
+)
+```
 
-## Related Files
+## Service Icons
 
-Service implementations are in `custom_components/ha_integration_domain/services/`.
+Define in `icons.json`:
 
-## Validation
+```json
+{
+  "services": {
+    "turn_on": { "service": "mdi:lightbulb-on" },
+    "start_brewing": {
+      "service": "mdi:flask",
+      "sections": { "advanced_options": "mdi:test-tube" }
+    }
+  }
+}
+```
 
-Services are validated by Home Assistant on integration load. Check logs for schema errors.
+## Permissions
 
-Reference: https://developers.home-assistant.io/docs/dev_101_services/
+Verify authentication when required:
+
+```python
+async def handle_service(call: ServiceCall) -> None:
+    if not call.context.user_id:
+        raise Unauthorized("Service requires authentication")
+```

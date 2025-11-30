@@ -51,50 +51,114 @@ sensor/
 
 **Required for:**
 
-- All function parameters
-- All function return values
+- All function parameters and return values
 - Class attributes (when not obvious)
 
-**Import from:**
+**Import rules:**
 
 - `from __future__ import annotations` (always first import)
-- `typing` for complex types
 - `collections.abc` for abstract base classes (prefer over `typing`)
+- `typing` for complex types (Any, TYPE_CHECKING, etc.)
 
-**Example:**
+**Avoiding circular imports:**
 
-```python
-from __future__ import annotations
-
-from collections.abc import Mapping
-from typing import Any
-
-async def process_data(input_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Process input data."""
-    ...
-```
+Use `if TYPE_CHECKING:` block for type-only imports that would cause circular dependencies.
 
 ## Async Patterns
 
-**All I/O operations must be async:**
+**All I/O operations must be async** - Network, file, database, blocking operations
 
-- Network requests (aiohttp)
-- File operations (aiofiles if needed)
-- Database queries
-- Any blocking operation
+**Core patterns:**
 
-**Use:**
-
-- `async def` for coroutines
-- `await` for async calls
+- `async def` for coroutines, `await` for async calls
 - `asyncio.gather()` for concurrent operations
 - `asyncio.timeout()` for timeouts (not `async_timeout`)
+- Never: `time.sleep()`, synchronous HTTP libraries, blocking operations
 
-**Never:**
+**Running blocking code:**
 
-- `time.sleep()` → use `await asyncio.sleep()`
-- Synchronous HTTP libraries → use `aiohttp`
-- Blocking operations in coordinator or entity code
+- `await hass.async_add_executor_job(sync_function, arg1, arg2)` - Run blocking I/O in executor thread
+- Avoid if sync function also uses executor internally (deadlock risk)
+
+**Background tasks:**
+
+- `hass.async_create_task(coroutine)` - Fire-and-forget parallel execution
+- `asyncio.run_coroutine_threadsafe(coro, hass.loop).result()` - From sync thread (rare)
+
+**Callback decorator:**
+
+- `@callback` from `homeassistant.core` - For event loop functions without blocking
+- Required for event listeners, state change callbacks
+- Cannot do I/O, cannot call coroutines (only schedule them)
+- Missing decorator causes execution in executor thread (wrong context)
+
+**Blocking operations (NEVER in event loop):**
+
+- File: `open()`, `pathlib.Path.read_text()`, `pathlib.Path.write_bytes()`
+- Directory: `os.listdir()`, `os.walk()`, `glob.glob()`
+- Network: `urllib` (use `aiohttp`)
+- Other: `time.sleep()`, `SSLContext.load_default_certs()`
+- **All must run in executor:** `await hass.async_add_executor_job(blocking_func)`
+
+**Late imports:**
+
+- Module-level imports are safe
+- Late async imports: `await async_import_module(hass, "module.path")`
+- `if TYPE_CHECKING:` for type-only imports
+
+## Code Style
+
+**Conventions not enforced by Ruff:**
+
+- Comments as complete sentences with capitalization and ending period
+- Alphabetical sorting of constants/lists when order doesn't matter
+
+**Note:** Ruff enforces `__all__`/`__slots__` sorting, import ordering, f-string usage in logs.
+
+## Home Assistant Requirements
+
+**Setup Failure Handling:**
+
+See [Integration Setup Failures](https://developers.home-assistant.io/docs/integration_setup_failures) for details.
+
+- `ConfigEntryNotReady` - Device offline/unavailable (raises in `async_setup_entry()`)
+- `ConfigEntryAuthFailed` - Expired credentials (triggers reauth flow)
+- Pass error message to exception (HA logs at debug level automatically)
+- **Do NOT log setup failures manually** - Avoid log spam
+
+**Constants:**
+
+- Prefer `homeassistant.const` over defining new ones (e.g., `CONF_USERNAME`, `CONF_PASSWORD`)
+- Only add to integration's `const.py` if widely used internally
+
+**Units of Measurement:**
+
+- Always use constants from `homeassistant.const` - Never hardcode strings
+- Examples: `CONCENTRATION_MICROGRAMS_PER_CUBIC_METER`, `PERCENTAGE`, `UnitOfTime.HOURS`
+- Construct compound units if no combined constant exists: `f"{UnitOfLength.METERS}/{UnitOfTime.SECONDS}"`
+
+**Time and Timestamps:**
+
+- Always use UTC timestamps (ISO 8601 or Unix)
+- Use `dt_util.utcnow().isoformat()` from `homeassistant.util`
+- Never use relative time ("2 hours ago") in state/attributes
+
+**Service Actions:**
+
+- Format: `<integration_domain>.<action_name>`
+- Register under integration domain (not platform domain)
+- Example: `hass.services.async_register(DOMAIN, "reset_filter", handler)`
+
+**Event Names:**
+
+- Prefix with integration domain: `<domain>_<event_name>`
+- Example: `hass.bus.async_fire(f"{DOMAIN}_device_paired", data)`
+
+**PARALLEL_UPDATES:**
+
+- Define in platform `__init__.py` if needed
+- Controls concurrent entity updates (default: 0 for async, 1 for sync)
+- Import from `const.py` if shared across platforms
 
 ## Imports
 
@@ -106,86 +170,35 @@ async def process_data(input_data: Mapping[str, Any]) -> dict[str, Any]:
 4. Home Assistant core
 5. Local integration imports
 
-**Home Assistant aliases:**
-
-```python
-import voluptuous as vol
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
-from homeassistant.util import dt as dt_util
-```
+**Standard HA aliases:** `vol`, `cv`, `dr`, `er`, `dt_util`
 
 ## Entity Classes
 
-**Structure:**
+**Structure requirements:**
 
-```python
-from homeassistant.components.sensor import SensorEntity
-
-from ..const import DOMAIN
-from ..coordinator import IntegrationBlueprintDataUpdateCoordinator
-from ..entity import IntegrationBlueprintEntity
-
-class IntegrationBlueprintSomeSensor(SensorEntity, IntegrationBlueprintEntity):
-    """Some sensor class."""
-
-    def __init__(
-        self,
-        coordinator: IntegrationBlueprintDataUpdateCoordinator,
-    ) -> None:
-        """Initialize sensor."""
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_some_sensor"
-        self._attr_name = "Some Sensor"
-```
-
-**Key points:**
-
-- Inherit from both platform entity and `IntegrationBlueprintEntity`
-- Set `_attr_unique_id` in `__init__`
-- Use coordinator data, never direct API calls
+- Inherit from both platform entity and `IntegrationBlueprintEntity` (order matters)
+- Set `_attr_unique_id` in `__init__` (format: `{entry_id}_{key}`)
+- Use coordinator data only - Never call API directly
 - Handle unavailability via `_attr_available`
 
 ## Error Handling
 
-**Use specific exceptions:**
+**Use specific exceptions from integration's exception module**
 
-```python
-from ..exceptions import IntegrationBlueprintException, IntegrationBlueprintConnectionError
+**Logging levels:**
 
-try:
-    result = await self.coordinator.client.fetch_data()
-except IntegrationBlueprintConnectionError as err:
-    _LOGGER.error("Connection failed: %s", err)
-    self._attr_available = False
-```
-
-**Log appropriately:**
-
-- `_LOGGER.error()` - Errors that affect functionality
+- `_LOGGER.critical()` - System-critical failures
+- `_LOGGER.exception()` - Errors with full traceback (in exception handlers)
+- `_LOGGER.error()` - Errors affecting functionality
 - `_LOGGER.warning()` - Recoverable issues
-- `_LOGGER.debug()` - Detailed troubleshooting info
+- `_LOGGER.info()` - Sparingly, user-facing only
+- `_LOGGER.debug()` - Detailed troubleshooting
 
-## Coordinator Pattern
+**Log message style:**
 
-**Always use the coordinator:**
-
-```python
-@property
-def native_value(self) -> float | None:
-    """Return sensor value."""
-    return self.coordinator.data.temperature
-```
-
-**Never:**
-
-```python
-# DON'T DO THIS
-async def async_update(self) -> None:
-    """Fetch new state data."""
-    self._value = await self.api_client.get_data()  # ❌ Wrong!
-```
+- No periods at end (syslog style)
+- Never log credentials/tokens/API keys
+- Use `%` formatting (enforced by Ruff G004)
 
 ## Testing Considerations
 
@@ -210,76 +223,30 @@ async def test_sensor_setup(hass, config_entry, coordinator):
 
 ## Common Patterns
 
-**Config entry data access:**
+**Config entry data:** `entry_data: IntegrationBlueprintData = hass.data[DOMAIN][entry.entry_id]`
 
-```python
-entry_data: IntegrationBlueprintData = hass.data[DOMAIN][entry.entry_id]
-coordinator = entry_data.coordinator
-```
-
-**Device info (in base entity):**
-
-```python
-@property
-def device_info(self) -> DeviceInfo:
-    """Return device information."""
-    return DeviceInfo(
-        identifiers={(DOMAIN, self.coordinator.config_entry.entry_id)},
-        manufacturer="Manufacturer",
-        model="Model",
-        name="Device Name",
-    )
-```
+**Device info:** Provided via base entity class (manufacturer, model, serial, config URL, firmware)
 
 ## Validation
 
-Before submitting code, ensure it passes:
-
-```bash
-script/type-check  # Pyright
-script/lint        # Ruff (auto-fix enabled)
-script/test        # pytest
-```
+Run before submitting: `script/type-check`, `script/lint`, `script/test`
 
 **When validation fails:**
 
-- Look up the specific error code in [Ruff rules](https://docs.astral.sh/ruff/rules/)
-- Check [Pyright documentation](https://microsoft.github.io/pyright/) for type errors
-- Search [Home Assistant docs](https://developers.home-assistant.io/) for pattern guidance
-- Don't bypass checks - understand and fix the root cause
+- Look up error codes: [Ruff rules](https://docs.astral.sh/ruff/rules/), [Pyright docs](https://microsoft.github.io/pyright/)
+- Search [HA docs](https://developers.home-assistant.io/) for patterns
+- Fix root cause - Don't bypass checks
 
-**Suppressing checks (use sparingly):**
+**Suppressing checks (use sparingly for false positives/library issues):**
 
-When genuinely necessary (false positives, library issues):
+- Specific suppression: `# noqa: F401 - Reason` or `# type: ignore[attr-defined] - Reason`
+- **Never use blanket:** `# noqa`, `# type: ignore`, `# ruff: noqa`
+- Always include error codes and explanatory comments
 
-```python
-# Specific Ruff rule suppression
-from plugin import register  # noqa: F401 - Side-effect import for plugin system
+## Verify Current Patterns
 
-# Specific Pyright suppression
-result = external_lib.method()  # type: ignore[attr-defined] - Library lacks type stubs
+Home Assistant APIs evolve - Always verify current patterns:
 
-# Per-file suppression (top of file, rare cases only)
-# ruff: noqa: E501 - URLs in docstrings exceed line length
-```
-
-**Never use blanket suppressions:**
-
-- ❌ `# noqa` (no code)
-- ❌ `# type: ignore` (no specific error)
-- ❌ `# ruff: noqa` (entire file)
-
-**Always:**
-
-- Include specific error codes
-- Add explanatory comments
-- Prefer fixing over suppressing
-
-## When Adding New Functionality
-
-**Always verify current patterns:**
-
-- Check [Home Assistant Developer Docs](https://developers.home-assistant.io/) for the latest API usage
-- Review the [developer blog](https://developers.home-assistant.io/blog/) for recent deprecations or changes
-- Search for similar implementations: `site:developers.home-assistant.io [feature type]`
-- Home Assistant APIs evolve - don't rely solely on prior knowledge
+- [Home Assistant Developer Docs](https://developers.home-assistant.io/)
+- [Developer Blog](https://developers.home-assistant.io/blog/) for deprecations/changes
+- Search: `site:developers.home-assistant.io [feature type]`

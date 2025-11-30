@@ -12,7 +12,7 @@ Your goal is to diagnose and fix issues with the data update coordinator.
 
 **Data Not Updating:**
 
-- Check coordinator update interval in `coordinator.py`
+- Check coordinator update interval in `coordinator/base.py`
 - Verify `async_update_data()` is actually fetching new data
 - Look for exceptions in Home Assistant logs
 - Check if API client is returning stale data
@@ -108,7 +108,7 @@ def native_value(self) -> float | None:
 **Adjust Update Interval:**
 
 ```python
-# In coordinator.py
+# In coordinator/base.py
 super().__init__(
     hass,
     _LOGGER,
@@ -119,9 +119,9 @@ super().__init__(
 
 ## Related Files to Review
 
-- [#file:custom_components/ha_integration_domain/coordinator.py]
+- [#file:custom_components/ha_integration_domain/coordinator/base.py]
 - [#file:custom_components/ha_integration_domain/api/client.py]
-- [#file:custom_components/ha_integration_domain/entity.py]
+- [#file:custom_components/ha_integration_domain/entity/base.py]
 - [#file:config/configuration.yaml] - for log levels
 - [#file:config/home-assistant.log] - for error traces
 
