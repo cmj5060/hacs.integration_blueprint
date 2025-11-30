@@ -9,7 +9,12 @@ custom_components/ha_integration_domain/
 ├── __init__.py              # Integration setup and unload
 ├── config_flow.py           # Config flow entry point
 ├── const.py                 # Constants and configuration keys
-├── coordinator.py           # Data update coordinator
+├── coordinator/             # Data update coordinator package
+│   ├── __init__.py          # Exports IntegrationBlueprintDataUpdateCoordinator
+│   ├── base.py              # Main coordinator class
+│   ├── data_processing.py   # Data validation and transformation
+│   ├── error_handling.py    # Error recovery and retry logic
+│   └── listeners.py         # Entity callbacks and event listeners
 ├── data.py                  # Data classes and type definitions
 ├── diagnostics.py           # Diagnostic data for troubleshooting
 ├── entity.py                # Base entity class
@@ -50,16 +55,37 @@ custom_components/ha_integration_domain/
 
 ### Data Update Coordinator
 
-**File:** `coordinator.py`
+**Directory:** `coordinator/`
 
-The coordinator manages periodic data fetching from the external API and distributes updates to all entities. It implements:
+The coordinator package manages periodic data fetching from the external API and distributes
+updates to all entities. It is organized as a package with separate modules for different concerns:
+
+**Package structure:**
+
+- `base.py` - Main coordinator class (`IntegrationBlueprintDataUpdateCoordinator`)
+- `data_processing.py` - Data validation, transformation, and caching utilities
+- `error_handling.py` - Error recovery strategies, retry logic, and circuit breaker patterns
+- `listeners.py` - Entity callbacks, event listeners, and performance monitoring
+
+**Core functionality:**
 
 - Configurable update interval (default: 5 minutes)
 - Error handling with exponential backoff
 - Shared data access for all entities
 - Automatic retry on transient failures
+- Data validation and transformation before distribution
+- Performance monitoring and metrics
 
-**Key class:** `IntegrationBlueprintDataUpdateCoordinator`
+**Key class:** `IntegrationBlueprintDataUpdateCoordinator` (exported from `coordinator/__init__.py`)
+
+**Design rationale:**
+
+The coordinator is structured as a package rather than a single file to support future extensibility:
+
+- **Separation of concerns**: Core logic, error handling, and data processing are isolated
+- **Easy extension**: New features (caching, metrics, webhooks) can be added as new modules
+- **Maintainability**: Individual modules stay focused and manageable (<400 lines)
+- **Testability**: Each module can be tested independently
 
 ### API Client
 
