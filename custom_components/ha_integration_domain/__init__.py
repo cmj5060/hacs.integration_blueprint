@@ -30,7 +30,7 @@ from .api import IntegrationBlueprintApiClient
 from .const import DOMAIN, LOGGER
 from .coordinator import IntegrationBlueprintDataUpdateCoordinator
 from .data import IntegrationBlueprintData
-from .services import async_setup_services
+from .service_actions import async_setup_services
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -55,10 +55,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """
     Set up the integration.
 
-    This is called once at Home Assistant startup to register services.
-    Services must be registered here (not in async_setup_entry) to ensure:
-    - Service validation works correctly
-    - Services are available even without config entries
+    This is called once at Home Assistant startup to register service actions.
+    Service actions must be registered here (not in async_setup_entry) to ensure:
+    - Service action validation works correctly
+    - Service actions are available even without config entries
     - Helpful error messages are provided
 
     This is a Silver Quality Scale requirement.

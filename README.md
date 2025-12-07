@@ -269,7 +269,7 @@ custom_components/ha_integration_domain/  # Your integration code
 ├── diagnostics.py             # Diagnostics data for troubleshooting
 ├── manifest.json              # Integration metadata
 ├── repairs.py                 # Repair flows for fixing issues
-├── services.yaml              # Service definitions
+├── services.yaml              # Service action definitions (legacy filename)
 │
 ├── api/                       # API client package
 │   ├── __init__.py
@@ -300,8 +300,8 @@ custom_components/ha_integration_domain/  # Your integration code
 │   ├── device_info.py         # Device info helpers
 │   └── state_helpers.py       # State calculation helpers
 │
-├── services/                  # Service handlers package
-│   └── __init__.py            # Service registration and handlers
+├── service_actions/           # Service action handlers package
+│   └── __init__.py            # Service action registration and handlers
 │
 ├── utils/                     # General utilities package
 │   └── __init__.py            # Utility functions
@@ -388,7 +388,7 @@ Each platform (sensor, binary_sensor, switch, etc.) is a package containing:
 - **`api/`** - API client and exceptions
 - **`config_flow_handler/`** - All config flow logic, schemas, and validators
 - **`entity_utils/`** - Shared entity helpers (device info, state calculations)
-- **`services/`** - Service registration and handlers (e.g., `example_service.py`)
+- **`service_actions/`** - Service action registration and handlers (e.g., `example_service.py`)
 - **`utils/`** - General utility functions (string helpers, validators, etc.)
 
 ---

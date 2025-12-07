@@ -1,11 +1,11 @@
-"""Services package for ha_integration_domain."""
+"""Service actions package for ha_integration_domain."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from custom_components.ha_integration_domain.const import DOMAIN, LOGGER
-from custom_components.ha_integration_domain.services.example_service import (
+from custom_components.ha_integration_domain.service_actions.example_service import (
     async_handle_example_action,
     async_handle_reload_data,
 )
@@ -14,7 +14,7 @@ from homeassistant.core import ServiceCall
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-# Service names - only used within services module
+# Service action names - only used within service_actions module
 SERVICE_EXAMPLE_ACTION = "example_action"
 SERVICE_RELOAD_DATA = "reload_data"
 

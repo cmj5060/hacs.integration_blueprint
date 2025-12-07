@@ -1,4 +1,4 @@
-"""Example service handlers for ha_integration_domain."""
+"""Example service action handlers for ha_integration_domain."""
 
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ async def async_handle_example_action(
     call: ServiceCall,
 ) -> None:
     """
-    Handle the example_action service call.
+    Handle the example_action service action call.
 
-    This is a dummy service that demonstrates how to implement custom services.
+    This is a dummy service action that demonstrates how to implement custom service actions.
 
     Args:
         hass: Home Assistant instance

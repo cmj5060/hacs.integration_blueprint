@@ -22,7 +22,7 @@ custom_components/ha_integration_domain/
 │   └── base.py              # Base entity class implementation
 ├── manifest.json            # Integration metadata
 ├── repairs.py               # Repair flows for fixing issues
-├── services.yaml            # Service definitions
+├── services.yaml            # Service action definitions (legacy filename)
 ├── api/                     # External API communication
 │   ├── __init__.py
 │   └── client.py            # API client implementation
@@ -44,9 +44,9 @@ custom_components/ha_integration_domain/
 │   ├── __init__.py
 │   ├── device_info.py       # Device information helpers
 │   └── state_helpers.py     # State management utilities
-├── services/                # Service implementations
+├── service_actions/         # Service action implementations
 │   ├── __init__.py
-│   └── example_service.py   # Example service handler
+│   └── example_service.py   # Example service action handler
 ├── translations/            # Localization files
 │   └── en.json              # English translations
 └── <platform>/              # Platform-specific implementations
@@ -206,8 +206,8 @@ This project includes comprehensive instruction files for AI coding assistants (
 | `manifest.instructions.md` | `**/manifest.json` | Integration manifest requirements, quality scale, IoT class |
 | `configuration_yaml.instructions.md` | `**/configuration.yaml` | Home Assistant configuration patterns (deprecated for device integrations) |
 | `config_flow.instructions.md` | `**/config_flow_handler/**/*.py`, `**/config_flow.py` | Config flow patterns, discovery, reauth, reconfigure, unique IDs |
-| `services.instructions.md` | `**/services/**/*.py` | Service implementation, registration in `async_setup()`, error handling |
-| `services_yaml.instructions.md` | `**/services.yaml` | Service definitions, schema, descriptions, examples |
+| `service_actions.instructions.md` | `**/service_actions/**/*.py` | Service action implementation, registration in `async_setup()`, error handling |
+| `services_yaml.instructions.md` | `**/services.yaml` | Service action definitions, schema, descriptions, examples (legacy filename) |
 | `entities.instructions.md` | Entity platform files | Entity implementation, EntityDescription, device info, state management |
 | `coordinator.instructions.md` | `**/coordinator/**/*.py`, `**/api/**/*.py` | DataUpdateCoordinator patterns, error handling, caching, pull vs push |
 | `api.instructions.md` | `**/api/**/*.py`, `**/coordinator/**/*.py` | API client implementation, exceptions, rate limiting, pagination |
@@ -300,11 +300,11 @@ To add new functionality:
 3. Create entity classes inheriting from platform base + `IntegrationBlueprintEntity`
 4. Add platform to `PLATFORMS` in `const.py`
 
-### Adding a New Service
+### Adding a New Service Action
 
-1. Create service handler in `services/<service_name>.py`
-2. Define service in `services.yaml` with schema
-3. Register service in `__init__.py:async_setup_entry()`
+1. Create service action handler in `service_actions/<service_name>.py`
+2. Define service action in `services.yaml` (legacy filename) with schema
+3. Register service action in `__init__.py:async_setup()` (NOT `async_setup_entry`)
 
 ### Modifying Data Structure
 

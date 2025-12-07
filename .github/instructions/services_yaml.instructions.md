@@ -2,9 +2,11 @@
 applyTo: "**/services.yaml"
 ---
 
-# Services Definition Instructions
+# Service Actions Definition Instructions
 
-**Applies to:** `services.yaml` files
+**Applies to:** `services.yaml` files (legacy filename)
+
+**Note:** This file defines service action schemas. The filename `services.yaml` is legacy from when these were called "services". Use "service actions" in code/documentation and "actions" for users.
 
 ## Schema Validation
 
@@ -15,9 +17,9 @@ This schema defines the complete structure for Home Assistant service definition
 ## Structure
 
 ```yaml
-service_name:
+action_name:
   name: Human-Readable Name
-  description: Clear description of what the service does.
+  description: Clear description of what the action does.
   fields:
     parameter_name:
       name: Parameter Name
@@ -33,7 +35,7 @@ service_name:
 
 ## Key Requirements
 
-**Service definition:**
+**Service action definition:**
 
 - `name` - User-visible name (required)
 - `description` - Clear explanation with Markdown support (required)
@@ -51,7 +53,7 @@ service_name:
 
 ## Selector Types
 
-Common selectors for service parameters:
+Common selectors for service action parameters:
 
 - `text:` - String input
 - `number:` - Numeric input with optional min/max/step
@@ -103,15 +105,15 @@ turn_on:
 - Include realistic examples for complex fields
 - Use appropriate selectors for better UI
 - Mark fields as required only when necessary
-- Keep service names verb-based (e.g., `set_mode`, `reset_filter`)
+- Keep action names verb-based (e.g., `set_mode`, `reset_filter`)
 - Validate against schema before committing
 
 ## Related Files
 
-Service implementations are in `custom_components/ha_integration_domain/services/`.
+Service action implementations are in `custom_components/ha_integration_domain/service_actions/`.
 
 ## Validation
 
-Services are validated by Home Assistant on integration load. Check logs for schema errors.
+Service actions are validated by Home Assistant on integration load. Check logs for schema errors.
 
 Reference: https://developers.home-assistant.io/docs/dev_101_services/
